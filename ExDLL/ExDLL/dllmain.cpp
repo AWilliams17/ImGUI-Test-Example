@@ -3,22 +3,11 @@
 #include <conio.h>
 #include <cstdio>
 
-bool IsForegroundProcess(DWORD pid)
-{
-    HWND hwnd = GetForegroundWindow();
-    DWORD foregroundPid;
-
-    GetWindowThreadProcessId(hwnd, &foregroundPid);
-
-    return (foregroundPid == pid);
-}
-
+bool bHooked = false;
 DWORD CALLBACK HookFunctions(LPVOID) {
-    while (IsForegroundProcess(GetCurrentProcessId())) {
-        if (GetAsyncKeyState(VK_F1)) {
-            PrintVTableAddress();
-        }
-        Sleep(1000);
+    if (!bHooked) {
+        DoHook();
+        bHooked = true;
     }
     return 0;
 }
@@ -36,9 +25,9 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
-    case DLL_THREAD_ATTACH:
         DisableThreadLibraryCalls(hModule);
         CreateThread(0, 0, (LPTHREAD_START_ROUTINE)HookFunctions, 0, 0, 0);
+    case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:
     case DLL_PROCESS_DETACH:
         break;
